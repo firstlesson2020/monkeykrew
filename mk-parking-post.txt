@@ -1,0 +1,54 @@
+import json
+import boto3
+import uuid
+from datetime import datetime
+
+def lambda_handler(event, context):
+    print(event)
+    #body=json.loads(event['body'])
+    #body=event['body']
+    #print(body)
+    phoneNumber = event["PhoneNumber"]
+    email = event["Email"]
+    name = event["Name"]
+    address = event["Adress"]
+    #adresscolumn = json.loads(address)
+    
+    vehicletype = event["VehicleType"]
+    #vehiclecolumn = json.loads(adresscolumn)
+    
+    parkingavailable = event["ParkingAvailable"]
+    
+    parkingplace = event["ParkingPlace"]
+    
+    transactionId = "MKP"+str(uuid.uuid1())[:6]
+    date = datetime.today().strftime('%Y-%m-%d-%H:%M:%S')
+    
+    print(phoneNumber)
+    #Sending to Dynamodb
+    dynamodb = boto3.resource('dynamodb')
+    table = dynamodb.Table('mk-parking-customer-details')
+       
+    table.put_item(
+        Item={
+              'PhoneNumber': phoneNumber,
+			  'Name' : name,
+			  'UniqueID' : transactionId,
+			  'Registered_Date' : date,
+			  'Email' : email,
+			  'Adress' : address,
+			  'TypeOfVechicle' : vehicletype,
+			  'ParkingAvailableFor' : parkingavailable,
+			  'ParkingPlace' : parkingplace
+            }
+        )
+        
+    return {
+        'headers' : {
+		"Content-Type": "application/json",
+		"Access-Control-Allow-Origin": "*",
+		'Access-Control-Allow-Methods': 'OPTIONS,POST,GET'
+	},
+        'statusCode': 200,
+        'body': json.dumps('Hello you are registered')
+    }

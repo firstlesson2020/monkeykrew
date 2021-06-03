@@ -1,0 +1,54 @@
+import json
+import boto3
+import uuid
+from datetime import datetime
+
+def lambda_handler(event, context):
+    print(event)
+    #body=json.loads(event['body'])
+    #body=event['body']
+    #print(body)
+    # phoneNumber = event["PhoneNumber"]
+    email = event["Email"]
+    name = event["Name"]
+    querybox = event["Querybox"]
+    #adresscolumn = json.loads(address)
+    
+    #vehicletype = json.dumps(event["VehicleType"])
+    #vehiclecolumn = json.loads(adresscolumn)
+    
+    #parkingavailable = json.dumps(event["ParkingAvailable"])
+    
+    #parkingplace = json.dumps(event["ParkingPlace"])
+    
+    transactionId = "MKS"+str(uuid.uuid1())[:6]
+    date = datetime.today().strftime('%Y-%m-%d-%H:%M:%S')
+    
+    # print(phoneNumber)
+    #Sending to Dynamodb
+    dynamodb = boto3.resource('dynamodb')
+    table = dynamodb.Table('mk-software-feedback')
+       
+    table.put_item(
+        Item={
+            #   'PhoneNumber': phoneNumber,
+			  'Name' : name,
+			  'UniqueID' : transactionId,
+			  'Registered_Date' : date,
+			  'Email' : email,
+			  'Querybox' : querybox
+			  #'TypeOfVechicle' : vehicletype,
+			  #'ParkingAvailableFor' : parkingavailable,
+			  #'ParkingPlace' : parkingplace
+            }
+        )
+        
+    return {
+        'headers' : {
+		"Content-Type": "application/json",
+		"Access-Control-Allow-Origin": "*",
+		'Access-Control-Allow-Methods': 'OPTIONS,POST,GET'
+	},
+        'statusCode': 200,
+        'body': json.dumps('Hello you are registered')
+    }

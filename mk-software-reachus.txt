@@ -1,0 +1,67 @@
+import json
+import boto3
+import uuid
+from datetime import datetime
+from dateutil.tz import gettz
+import urllib3
+
+def lambda_handler(event, context):
+    print(event)
+    # #body=json.loads(event['body'])
+    # #body=event['body']
+    # #print(body)
+    htttp = urllib3.PoolManager()
+    
+    phoneNumber = event["PhoneNumber"]
+    email = event["Email"]
+    selectoption = event["SelectOption"]
+    name = event["Name"]
+    querybox = event["Querybox"]
+    #adresscolumn = json.loads(address)
+    
+    #vehicletype = json.dumps(event["VehicleType"])
+    #vehiclecolumn = json.loads(adresscolumn)
+    
+    #parkingavailable = json.dumps(event["ParkingAvailable"])
+    
+    #parkingplace = json.dumps(event["ParkingPlace"])
+    
+    transactionId = "MKP"+str(uuid.uuid1())[:6]
+    date = datetime.now(tz=gettz('Asia/Kolkata')).strftime('%Y-%m-%d-%H:%M:%S')
+    
+    #print(phoneNumber)
+    
+    data = {'text': "@channel \n  *we have a new enquiry*" + "\n" + "*Name* :" + name + "\n" + "*Phone number* :" + phoneNumber + "\n" +  "*Email* :" + email + "\n" + "*Enquiry date* :" + date + "\n" + "*looking for* :" + selectoption + "\n" + "*Expectations* :" + querybox} 
+    
+    r = htttp.request("POST",
+                      "https://hooks.slack.com/services/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",
+                      body = json.dumps(data))
+    
+    #Sending to Dynamodb
+    dynamodb = boto3.resource('dynamodb')
+    table = dynamodb.Table('mk-software-reachus')
+       
+    table.put_item(
+        Item={
+              'PhoneNumber': phoneNumber,
+			  'Name' : name,
+			  'UniqueID' : transactionId,
+			  'Enquiry_Date' : date,
+			  'Email' : email,
+			  'What are you looking for' : selectoption,
+			  'Your expectations' : querybox
+			  #'TypeOfVechicle' : vehicletype,
+			  #'ParkingAvailableFor' : parkingavailable,
+			  #'ParkingPlace' : parkingplace
+            }
+        )
+        
+    return {
+        'headers' : {
+		"Content-Type": "application/json",
+		"Access-Control-Allow-Origin": "*",
+		'Access-Control-Allow-Methods': 'OPTIONS,POST,GET'
+	},
+        'statusCode': 200,
+        'body': json.dumps("hello world")
+    }
