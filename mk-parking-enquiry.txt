@@ -1,0 +1,72 @@
+import json
+import boto3
+import uuid
+from datetime import datetime
+from boto3.dynamodb.conditions import And, Attr
+
+def lambda_handler(event, context):
+    # print(event)
+    #body=json.loads(event['body'])
+    #body=event['body']
+    #print(body)
+    
+    phoneNumber = event["enquiryUserNumber"]
+    
+    # email = event["Email"]
+    
+    name = event["enquiryUser"]
+    
+    customerUniqueID = event["enquiryUniqueId"]
+    
+    #adresscolumn = json.loads(address)
+    
+    # vehicletype = event["VehicleType"]
+    #vehiclecolumn = json.loads(adresscolumn)
+    
+    # parkingavailable = event["ParkingAvailable"]
+    
+    # parkingplace = event["ParkingPlace"]
+    
+    transactionId = "MKP"+str(uuid.uuid1())[:6]
+    date = datetime.today().strftime('%d-%m-%Y')
+    
+    #Sending to Dynamodb
+    dynamodb = boto3.resource('dynamodb')
+    table = dynamodb.Table('mk-parking-enquiry')
+       
+    table.put_item(
+        Item={
+            'PhoneNumber': phoneNumber,
+			 'Name' : name,
+			 'UniqueID' : transactionId,
+			 'Registered_Date' : date,
+			 'EnquiryUniqueID' : customerUniqueID
+             }
+        )
+        
+    dynamodb1 = boto3.resource('dynamodb')
+    table1 = dynamodb1.Table('mk-parking-customer-details')
+    
+    response = table1.scan(
+	    FilterExpression=Attr("UniqueID").eq("MKP1ca904")
+    )
+    
+    data = response['Items']
+    print (response['Items'])
+    Customerphonenumber = data[0]['PhoneNumber']
+    Customerusername = data[0]['Name']
+    
+    print(Customerphonenumber + Customerusername)
+    
+    return {
+        'headers' : {
+		"Content-Type": "application/json",
+		"Access-Control-Allow-Origin": "*",
+		'Access-Control-Allow-Methods': 'OPTIONS,POST,GET'
+	},
+        'statusCode': 200,
+        'data': ({
+            'Name' : Customerusername,
+            "PhoneNumber" : Customerphonenumber
+        })
+    }
